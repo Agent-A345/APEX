@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>APEX · Analytics Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <!-- html2canvas -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+
+<!-- ═══════════════════════════ HEADER ═══════════════════════════ -->
+<header class="topbar">
+  <div class="topbar-left">
+    <div class="logo">
+      <span class="logo-mark">▲</span>
+      <span class="logo-text">APEX</span>
+    </div>
+    <div class="dataset-switcher">
+      <label class="control-label">Dataset</label>
+      <div class="select-wrap">
+        <select id="datasetSelect">
+          <option value="sales">Sales</option>
+          <option value="expenses">Expenses</option>
+          <option value="productivity">Productivity</option>
+        </select>
+      </div>
+    </div>
+    <div class="period-switcher">
+      <label class="control-label">Period</label>
+      <div class="select-wrap">
+        <select id="periodSelect">
+          <option value="day">Daily</option>
+          <option value="week">Weekly</option>
+          <option value="month" selected>Monthly</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <button id="compareToggle" class="btn-ghost" title="Compare Mode">
+      <span class="btn-icon">⇄</span> Compare
+    </button>
+    <button id="addDataBtn" class="btn-ghost" title="Add Data Point">
+      <span class="btn-icon">＋</span> Add Data
+    </button>
+    <button id="exportBtn" class="btn-ghost" title="Export Dashboard">
+      <span class="btn-icon">↓</span> Export
+    </button>
+    <button id="darkModeToggle" class="btn-ghost icon-only" title="Toggle Theme">
+      <span id="themeIcon">☀</span>
+    </button>
+  </div>
+</header>
+
+<!-- ═══════════════════════════ MAIN ═══════════════════════════ -->
+<main class="dashboard" id="dashboardRoot">
+
+  <!-- INSIGHTS TICKER -->
+  <div class="insights-bar">
+    <span class="insights-label">INSIGHTS</span>
+    <div class="insights-ticker" id="insightsTicker">
+      <span class="insight-item loading">Calculating insights…</span>
+    </div>
+  </div>
+
+  <!-- ── LAYOUT GRID ── -->
+  <div class="layout-grid">
+
+    <!-- LEFT: KPI + FILTERS -->
+    <aside class="sidebar">
+
+      <!-- KPI CARDS -->
+      <div class="kpi-stack" id="kpiStack">
+        <div class="kpi-card" id="kpi0">
+          <div class="kpi-icon">💰</div>
+          <div class="kpi-body">
+            <div class="kpi-label">Total Revenue</div>
+            <div class="kpi-value" id="kpiVal0">—</div>
+            <div class="kpi-delta" id="kpiDelta0">—</div>
+          </div>
+        </div>
+        <div class="kpi-card" id="kpi1">
+          <div class="kpi-icon">📦</div>
+          <div class="kpi-body">
+            <div class="kpi-label">Transactions</div>
+            <div class="kpi-value" id="kpiVal1">—</div>
+            <div class="kpi-delta" id="kpiDelta1">—</div>
+          </div>
+        </div>
+        <div class="kpi-card" id="kpi2">
+          <div class="kpi-icon">📈</div>
+          <div class="kpi-body">
+            <div class="kpi-label">Avg / Day</div>
+            <div class="kpi-value" id="kpiVal2">—</div>
+            <div class="kpi-delta" id="kpiDelta2">—</div>
+          </div>
+        </div>
+        <div class="kpi-card" id="kpi3">
+          <div class="kpi-icon">🎯</div>
+          <div class="kpi-body">
+            <div class="kpi-label">Top Category</div>
+            <div class="kpi-value" id="kpiVal3">—</div>
+            <div class="kpi-delta" id="kpiDelta3">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FILTERS -->
+      <div class="filter-panel">
+        <div class="filter-heading">Filters</div>
+
+        <div class="filter-group">
+          <label class="filter-label">Month</label>
+          <div class="select-wrap">
+            <select id="filterMonth">
+              <option value="all">All Months</option>
+              <option value="1">January</option>
+              <option value="2">February</option>
+              <option value="3">March</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">Category</label>
+          <div class="select-wrap">
+            <select id="filterCategory">
+              <option value="all">All Categories</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">Type</label>
+          <div class="select-wrap">
+            <select id="filterType">
+              <option value="all">All Types</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="btn-apply" id="applyFilters">Apply Filters</button>
+        <button class="btn-reset" id="resetFilters">Reset</button>
+      </div>
+
+      <!-- TREND INDICATOR -->
+      <div class="trend-panel" id="trendPanel">
+        <div class="trend-heading">Trend Analysis</div>
+        <div class="trend-body" id="trendBody">—</div>
+      </div>
+
+    </aside>
+
+    <!-- RIGHT: CHARTS + TABLE -->
+    <section class="content-area">
+
+      <!-- CHARTS GRID -->
+      <div class="charts-grid">
+
+        <div class="chart-card wide" id="lineChartCard">
+          <div class="chart-header">
+            <span class="chart-title">Revenue Trend</span>
+            <span class="chart-subtitle" id="lineSubtitle">Over Time</span>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="lineChart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card" id="barChartCard">
+          <div class="chart-header">
+            <span class="chart-title">By Category</span>
+            <span class="chart-subtitle">Comparison</span>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="barChart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card" id="pieChartCard">
+          <div class="chart-header">
+            <span class="chart-title">Distribution</span>
+            <span class="chart-subtitle">Share %</span>
+          </div>
+          <div class="chart-wrap chart-wrap--pie">
+            <canvas id="pieChart"></canvas>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- DATA TABLE -->
+      <div class="table-card">
+        <div class="table-header">
+          <span class="table-title">Detailed Breakdown</span>
+          <span class="table-meta" id="tableMeta">Showing all records</span>
+        </div>
+        <div class="table-wrap">
+          <table id="dataTable">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Total</th>
+                <th>Transactions</th>
+                <th>Avg Value</th>
+                <th>Growth</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="tableBody">
+              <tr><td colspan="6" class="table-empty">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+  </div>
+</main>
+
+<!-- ═══════════════ DRILL-DOWN MODAL ═══════════════ -->
+<div class="modal-overlay" id="drillModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modalTitle">Detail View</span>
+      <button class="modal-close" id="modalClose">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ ADD DATA MODAL ═══════════════ -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal modal--form">
+    <div class="modal-header">
+      <span class="modal-title">Add Data Point</span>
+      <button class="modal-close" id="addModalClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Date</label>
+        <input type="date" id="formDate" class="form-input" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <input type="text" id="formCategory" class="form-input" placeholder="e.g. Electronics" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Amount</label>
+        <input type="number" id="formAmount" class="form-input" placeholder="e.g. 1500" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Type</label>
+        <input type="text" id="formType" class="form-input" placeholder="e.g. online" />
+      </div>
+      <button class="btn-apply" id="submitDataBtn">Add to Dataset</button>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
